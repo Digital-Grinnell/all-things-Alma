@@ -1,5 +1,2 @@
-No code here, just a link from Julia: https://github.com/julia-bauder/ares-alma-connector  
+No code here, just a link from Julia: https://github.com/GrinnellCollegeLibraries/Ares-Alma-Connector.   That is a public repo and the latest version.  
 
-When I tried to open that repo I got a 404, not found, so I'm betting it is PRIVATE and not shared with me.  
-
-    -Mark M.
