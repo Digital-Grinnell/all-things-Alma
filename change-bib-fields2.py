@@ -1,22 +1,27 @@
-# change-bib-fields.py
+# change-bib-fields2.py
 # 
-# This script uses https://github.com/Digital-Grinnell/almapipy to fetch a bib record and apply specific field
-# changes using Python.
+# This script uses https://github.com/Digital-Grinnell/pyalma to fetch a bib record and apply specific field
+# changes using Python.  Package was installed per https://www.geeksforgeeks.org/how-to-install-a-python-package-from-a-github-repository/ like so:
 #
-## See https://docs.python-guide.org/scenarios/xml/
+# (.venv) ╭─mcfatem@MAC3Q2TM4WHQ ~/GitHub/all-things-Alma ‹main●› 
+# ╰─$ pip3 install pyalma@git+https://github.com/Digital-Grinnell/pyalma   
 #
-## For Alma API handling see... https://github.com/Digital-Grinnell/almapipy
+## For Alma API handling see... https://github.com/Digital-Grinnell/pyalma
 
 # import community packages
-from almapipy import AlmaCnxn as AlmaAPIConn
+# from almapipy import AlmaCnxn as AlmaAPIConn
+import pyalma
+from pyalma.alma import Alma
+
+print(dir(pyalma))
+
+
 import json
-import xml.dom.minidom
-from xml.etree import ElementTree as ET
 import os
 from dotenv import load_dotenv
+import xml.dom.minidom
+from xml.etree import ElementTree as ET
 from pprint import pprint
-from xml.sax.saxutils import escape
-
 
 # import csv, os, argparse, gspread, json
 # import polars as pl
@@ -24,7 +29,6 @@ from xml.sax.saxutils import escape
 # from datetime import datetime
 # from almapipy import AlmaCnxn as AlmaAPIConn
 # from pathlib import Path
-
 
 # Initialize some stuff
 # -----------------------------------------------------------------------
@@ -37,21 +41,10 @@ ALMA_API_REGION = os.getenv('ALMA_API_REGION')
 if not ALMA_API_REGION:
     exit('ALMA_API_REGION is not set in the environment variables.')
 
-# initialize some stuff
-alma_api = None
-api_log_file = None
 
-#----------------------------------------------------------------------
-# sanitize_xml_replace(text)
-# This function takes a string as input and replaces special XML characters with their corresponding escape sequences.
-#
-def sanitize_xml_replace(text):
-    text = text.replace("&", "&amp;")
-    text = text.replace("<", "&lt;")
-    text = text.replace(">", "&gt;")
-    text = text.replace("'", "&apos;")
-    text = text.replace('"', "&quot;")
-    return text
+# Open the API connection
+alma_api = Alma(apikey=ALMA_API_KEY, region=ALMA_API_REGION)
+api_log_file = None
 
 #----------------------------------------------------------------------
 # pretty_print_xml is a function that takes an XML string as input and returns a pretty-printed version of the XML.
@@ -72,16 +65,21 @@ def pretty_print_xml(xml_string):
 #
 def bibs_catalog_get(mms_id):
     try:
-        bib_record = alma_api.bibs.catalog.get(mms_id)
+        # bib_record = alma_api.bibs.catalog.get(mms_id)
+        bib_record = alma_api.get_bib(mms_id)
+    
         if DEBUG:
-            print(json.dumps(bib_record, indent=4))
+            pprint(bib_record)
+            # print(json.dumps(bib_record, indent=4))
+            
         # Find the 'anies' key in the bib record
         if 'anies' in bib_record:
             # Pretty print the 'anies' list XML record  
-            print(f"\nFound 'anies' key in the bib record:\n")
-            for x in bib_record['anies']:
-                pretty_xml = pretty_print_xml(x)
-                print(pretty_xml)
+            print("Found 'anies' key in the bib record:")
+            pprint(bib_record['anies'])
+            
+            # pretty_xml = pretty_print_xml(bib_record['anies'][0])
+            # print(pretty_xml)
         else:
             print("No 'anies' key found in the bib record.")    
             
@@ -95,17 +93,8 @@ def bibs_catalog_get(mms_id):
 #
 def bibs_catalog_post(mms_id, bib_record):
     try:
-        status = alma_api.bibs.catalog.post(mms_id, bib_record, validate=True, raw=True)
-        if status.status_code == 200:
-            print(f"\nBib record {mms_id} was updated successfully.\n")
-        else:
-            print(f"\nBib record {mms_id} was not updated. Status code: {status.status_code}\n")
-            
-        # Print the status code and response
-        print(f"\nStatus code: \n{status.status_code}")
-        print(f"\nResponse: \n{status.text}")
-
-        if DEBUG:
+        alma_api.bibs.catalog.post(mms_id, bib_record)
+        if constant.DEBUG:
             print(bib_record, sep=' ', end='\n', flush=False)
     except Exception as e:
         exit(f'Alma bib.catalog.post exception: {e}')
@@ -118,7 +107,7 @@ with open(log_filename, 'w') as bib_log_file:
 
     # Open the Alma API
     try: 
-        alma_api = AlmaAPIConn(ALMA_API_KEY, data_format='json')
+        alma_api = AlmaAPIConn(constant.ALMA_API_KEY, data_format='json')
         msg = "\nAlma API connection is now open for bibs"
         print(msg)
     except:
@@ -174,14 +163,10 @@ with open(log_filename, 'w') as bib_log_file:
             root.append(new_field)
             break       
     
-    # If we don't have a handle now, loop on all the dc:identifier fields in the bib record
+    # If we don't have a handle, loop on all the dc:identifier fields in the bib record
     if not has_handle:   
         # Loop on all the dc:identifier fields in the bib record
         for identifier in dc_identifiers:
-            # If we have a handle, break out of the loop... no use creating duplicates
-            if has_handle:
-                break
-            
             if identifier.text.startswith("alma:"):
                 continue
             # If it starts with "grinnell", save the numeric part and discard the rest
@@ -190,8 +175,8 @@ with open(log_filename, 'w') as bib_log_file:
                 numeric_part = identifier.text.split(':')[1]
                 # Update the field to carry our Handle
                 identifier.text = f"http://hdl.handle.net/11084/{numeric_part}"
-                # # Print the updated field
-                # print(identifier.tag, identifier.text, sep=':', end='\n', flush=False)
+                # Print the updated field
+                print(identifier.tag, identifier.text, sep=':', end='\n', flush=False)
                 # Now, put the new field back into the bib record
                 root.append(identifier)  
                 # Set has handle to True to avoid duplicates
@@ -202,63 +187,46 @@ with open(log_filename, 'w') as bib_log_file:
                 numeric_part = identifier.text.split('_')[1]
                 # Update the field to carry our Handle
                 identifier.text = f"http://hdl.handle.net/11084/{numeric_part}"
-                # # Print the updated field
-                # print(identifier.tag, identifier.text, sep=':', end='\n', flush=False)
+                # Print the updated field
+                print(identifier.tag, identifier.text, sep=':', end='\n', flush=False)
                 # Now, put the new field back into the bib record
                 root.append(identifier)  
                 # Set has handle to True to avoid duplicates
                 has_handle = True
                 
-    # Pretty print the updated XML string INSIDE a new <bib> element
-    # Create a new root element
-    new_root = ET.Element('bib', xmlns='http://alma.exlibrisgroup.com/dc/01GCL_INST')
-    # Append the original root element to the new root element
-    new_root.append(root)
-    
-    # Convert the new root element to a string
-    # xml_string = ET.tostring(new_root, encoding='unicode', default_namespace='http://alma.exlibrisgroup.com/dc/01GCL_INST')   
-    xml_string = ET.tostring(new_root, encoding='unicode')   
-    print(f"\nThe updated XML string is:\n")
-    # pprint(xml_string, indent=4)
+    # Pretty print the updated XML string
+    xml_string = ET.tostring(root, encoding='unicode', default_namespace='http://alma.exlibrisgroup.com/dc/01GCL_INST')
     pretty_xml = pretty_print_xml(xml_string)
-    print(pretty_xml)
+    print(f"\nThe updated XML string is:\n{pretty_xml}")
                 
         
-    # Now, if the bib has a handle, update the bib record in Alma -------------------------------------------
+    # Now, if the bib has a handle, update the bib record in Alma
     if has_handle:
-        xml_bytes = xml_string.encode('utf-8')
-        bib_record['anies'][0] = xml_bytes
-
-        # sanitized = escape(xml_bytes.decode('utf-8'))
-        # bib_record['anies'][0] = sanitized
-
-        # Post the updated bib record to Alma... hold onto your hat!
+        bib_record['anies'][0] = xml_string
+        # Post the updated bib record to Alma
         result = bibs_catalog_post(mms_id, bib_record)
-        
         # Print the updated bib record
-        print(f"\nThe updated bib record is:\n")
-        pprint(result, indent=4)
-        # print(result, sep=' ', end='\n', flush=False)
+        print(result, sep=' ', end='\n', flush=False)
         # Print a message indicating the bib record was updated
-        msg = f"\nBib record {mms_id} was updated with a new Handle dc:identifier."
-        print(msg)
+        msg = f"Bib record {mms_id} was updated with a new Handle dc:identifier."
+        print(msg, sep=' ', end='\n', flush=False)
     else:
         # Print a message indicating the bib record was not updated
-        msg = f"\nBib record {mms_id} was not updated because it does not have a handle."
-        print(msg)
+        msg = f"Bib record {mms_id} was not updated because it does not have a handle."
+        print(msg, sep=' ', end='\n', flush=False)
 
 
     msg = f"\nThat's a wrap!"
     print(msg)
     bib_log_file.write(msg)
             
-    # # Close the Alma API
-    # try:
-    #     alma_api.close( )
-    #     msg = "\nAlma API connection is now closed."
-    #     print(msg)
-    # except:
-    #     exit('Alma API connection close failed!')
+    # Close the Alma API
+    try:
+        alma_api.close( )
+        msg = "\nAlma API connection is now closed."
+        print(msg)
+    except:
+        exit('Alma API connection close failed!')
     
     # Close the log file
     bib_log_file.close( )

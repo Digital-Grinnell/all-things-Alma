@@ -1,0 +1,19 @@
+aiohttp==1.3.0
+almapipy==1.0.3
+async-timeout==5.0.1
+asyncio==3.4.3
+certifi==2025.4.26
+chardet==5.2.0
+charset-normalizer==3.4.2
+colorama==0.4.6
+dotenv==0.9.9
+idna==3.10
+multidict==6.4.3
+propcache==0.3.1
+pyalma @ git+https://github.com/Digital-Grinnell/pyalma@244e2f04dac5c6a27c1b2c414fc0a42af417c233
+pymarc==5.2.3
+python-dotenv==1.1.0
+ratelimiter==1.2.0.post0
+requests==2.32.3
+urllib3==2.4.0
+yarl==1.20.0
