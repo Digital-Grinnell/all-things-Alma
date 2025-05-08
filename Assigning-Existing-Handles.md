@@ -11,28 +11,68 @@ The workflow suggested by support agent Anchi Hsu is...
 
 That workflow in practice looks something like this:  
 
-1) Build an itemized set of titles from a list of MMS IDs.  In my case something like...
+1) Build an itemized set of titles from a list of MMS IDs.  In my case the set named `Handles - First Batch from mms_ids.csv` was created with 6040 digital titles.  
 
-![Create an Itemized Set](<./Documents/Screenshot 2025-05-08 at 9.35.17 AM.png>)
-
-2) From `Admin` > `Run a job` find the `Copy dcterm to dc:identifier` job and run it with the set defined above, like so...
+2) Next, as suggested `Admin` > `Run a job` find the `Copy dcterm to dc:identifier` job and run it with the set defined above.  The suggested process would looked like this...
 
 ![Run the "Copy dcterm to dc:idenfifier" job](<./Documents/Screenshot 2025-05-08 at 9.39.16 AM.png>)
 
 ![Select New Set for the Job](<./Documents/Screenshot 2025-05-08 at 9.41.09 AM.png>)
 
-Once the job is complete and successful proceed to step 3.
+### Some Records Skipped
+
+If our `change-bib-by-request` process is not run ahead of step 2 all records may not have the necessary `dc.identifier`: `http://hdl.handle.net/11084...` value.  In this instance I had to run `change-bib-by-request.py` which produced the attached [change-bib-by-request.log](./Documents/change-bib-by-request.log) file for review.  It shows no errors.  
+
+Once the script and subsequent job are complete and successful proceed to step 3.
 
 3) From `Admin` > `Run a job` find the `DG Handle Migration` job, edit it to include the set defined in step 1, and run it like so...
  
 ![Setup the "DG Handle Migration" job](<./Documents/Screenshot 2025-05-08 at 9.46.20 AM.png>)
 
-![Select Our Set](<./Documents/Screenshot 2025-05-08 at 9.48.04 AM.png>)
+![Select Our Set](<./Documents/Screenshot 2025-05-08 at 1.18.30 PM.png>)
 
 Submit the job and when it is complete and successful proceed to step 4
 
-**Attention: There is indication of a problem here.  Many of the records did NOT process successfully because of the condition illustrated below.
+**Attention: There was indication of a problem here.  Many of the records did NOT process successfully because of the condition illustrated below.
 
 The `dc:identifier` field should NOT have a `dcterms:URI` attribute!  Those attributes need to be removed before handle assignment will work!  
 
-4) 
+Once that error was corrected the results were...  
+
+![Some Records Skipped](<./Documents/Screenshot 2025-05-08 at 1.22.38 PM.png>)  
+
+Examining some of the 99 skipped records shows statements consistent with...  
+
+```
+Record 991011592644004641 was skipped. Reason: BIB record MMS ID 991011592644004641 already has a handle identifier 11084/34662	05/08/2025 13:21:24 CDT	Information	Repository	System  2 	
+Record 991011592643604641 was skipped. Reason: BIB record MMS ID 991011592643604641 already has a handle identifier 11084/34664	05/08/2025 13:21:24 CDT	Information	Repository	System  3
+```
+
+...and those records do indeed already have working handles.  So, it's all good!  
+
+4) The final step from `Configuration` > `General` > `Integration Profile` > `Persistent Handle Identifiers for Digital Resource` > `Edit` > `Actions` > `Run` appears to work **AFTER** editing the `Set name`, like so...  
+
+![Be Sure to Edit the Set Name!](<./Documents/Screenshot 2025-05-08 at 1.27.56 PM.png>)
+
+Once the run completed the event report showed this:  
+
+![99 Complete?](<./Documents/Screenshot 2025-05-08 at 1.33.53 PM.png>)  
+
+So, it looks like the workflow keeps processing ONLY the 99 records that were completed a couple of days ago?  
+
+
+# Update
+
+I started to run the entire 4-step workflow again, process ID 7337283030004641, this time using the full set of digital titles from set 7337283030004641... and after step 3, running the `DG Handle Migration Job`, I got this result:  
+
+![All Skipped?](<Documents/Screenshot 2025-05-08 at 4.06.10 PM.png>)  
+
+The report says that all 11,442 records were skipped because they already have handles.  Ok, so I started checking them again, spot checking about a dozen handles from various pages... AND THEY ALL WORK!   
+
+I am thrilled with this outcome, but still wondering why this didn't work on the previous attempt?   For future reference I would dearly love to know if the 4-step sequence is correct, or is one of those steps out-of-order?  
+
+
+
+
+
+
