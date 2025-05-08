@@ -35,7 +35,7 @@ def get_and_put(api_key, mmsid):
 
     # Make changes here... return FALSE if no changes are made
     root = make_changes(root, namespaces)
-    if root is not None:
+    if root is False:
         msg = f"\n  No changes needed in bib record {mmsid}.\n"
         print(msg)
         bib_log_file.write(msg)
