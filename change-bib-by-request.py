@@ -6,6 +6,7 @@ import xml.etree.ElementTree as ET
 from dotenv import load_dotenv
 import os
 from pprint import pprint
+import datetime
 
 # This script is designed to get a bib record from Alma, modify it, and then put it back.
 # It uses the Alma API to perform these operations.
@@ -104,9 +105,11 @@ def make_changes(root, namespaces):
     # Fetch all the dcterms:identifier elements in the xml_string   
     dcterms_identifiers = root.findall('.//dcterms:identifier', namespaces) 
     
-    # Print the dcterms:identifier elements
+    # Print the dcterms:identifier elements with their attributes
     for identifier in dcterms_identifiers:
         print(identifier.tag, identifier.text, sep=':', end='\n', flush=False)
+        for key, value in identifier.attrib.items( ):
+            print(f"  attribute={key}: {value}", end='\n', flush=False)
     
     print(f"\nThe {len(root.findall('.//dc:identifier', namespaces))} dc:identifier elements are:")
 
@@ -116,34 +119,36 @@ def make_changes(root, namespaces):
     # Print the dc:identifier elements
     for identifier in dc_identifiers:
         print(identifier.tag, identifier.text, sep=':', end='\n', flush=False)
+        for key, value in identifier.attrib.items( ):
+            print(f"  attribute={key}: {value}", end='\n', flush=False)
     
-    # If any of the dc:identifer elements start with "http://hdl.handle.net/", set has_handle to True and break out of the loop
+    # If we have a dc:identiier handle with a dcterms:URI attribute, REMOVE the dcterms:URI attribute and we are done!
+    # Note that the dcterms:URI attribute is not needed in the dc:identifier element and was left from an earlier version of the code
+    attrib_target = '{http://www.w3.org/2001/XMLSchema-instance}type'
     for identifier in dc_identifiers:
-        if identifier.text.startswith("http://hdl.handle.net/"):
-            # If we have a handle, set has_handle to True and return False, no changes needed
-            has_handle = True
-            return False
-
-    # If we have a dc:identiier handle with a dcterms:URI attribute, REMOVE the dcterms:URI attribute, and we are done!
-    for identifier in dcterms_identifiers:
-        if identifier.text.startswith("http://hdl.handle.net/") and identifier.attrib.get('{http://purl.org/dc/terms/}URI'):
+        if identifier.text.startswith("http://hdl.handle.net/") and identifier.attrib.get(attrib_target) == 'dcterms:URI':
             # If it has a dcterms:URI attribute, remove it      
-            identifier.attrib.pop('{http://purl.org/dc/terms/}URI', None)
+            identifier.attrib.pop(attrib_target, None)
             # Change the dcterms:identifier tag to dc:identifier
             has_handle = True
             # Log the change
             msg = f"\n  Removed dcterms:URI attribute from {identifier.text}"
             bib_log_file.write(msg)
             print(msg)
-            
-            # Return the updated root element   
             return root
+
+    # If any of the remaining dc:identifer elements start with "http://hdl.handle.net/", set has_handle to True and return False, no changes needed
+    for identifier in dc_identifiers:
+        if identifier.text.startswith("http://hdl.handle.net/"):
+            # If we have a handle, set has_handle to True and return False, no changes needed
+            has_handle = True
+            return False
       
     # If we have a dcterms:identiier handle, set has_handle to True, change the dcterms:identifier tag to dc:identifier, REMOVE the dcterms:URI attribute, and we are done!
     for identifier in dcterms_identifiers:
         if identifier.text.startswith("http://hdl.handle.net/"):
             # Remove the dcterms:URI attribute
-            identifier.attrib.pop('{http://purl.org/dc/terms/}URI', None)
+            identifier.attrib.pop(attrib_target, None)
             # Change the dcterms:identifier tag to dc:identifier
             identifier.tag = 'dc:identifier'
             has_handle = True
@@ -151,8 +156,6 @@ def make_changes(root, namespaces):
             msg = f"\n  Changed dcterms:identifier to dc:identifier for {identifier.text}"
             bib_log_file.write(msg)
             print(msg)
-            
-            # Return the updated root element   
             return root
     
     # If we don't have a handle now, loop on all the dc:identifier fields in the bib record
@@ -224,8 +227,10 @@ if __name__ == "__main__":
         # Where the rubber meets the road...
         # -----------------------------------------------------------------------
         for mms_id in mms_ids:  
-            # Print the MMS ID to the log file
-            msg = f"\nProcessing MMS ID: {mms_id}"
+            # Print the MMS ID to the log file with a timestamp
+            timestamp = datetime.datetime.now( ).strftime("%Y-%m-%d %H:%M:%S")
+            # Write the timestamp and MMS ID to the log file
+            msg = f"\n{timestamp} - Processing MMS ID: {mms_id}"
             print(msg)
             bib_log_file.write(msg)
             
