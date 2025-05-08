@@ -17,7 +17,8 @@ from pprint import pprint
 # The get_and_put function takes an API key and a MMS ID as arguments.
 # ----------------------------------------------------------------------------
 def get_and_put(api_key, mmsid):
-    # Get the bib record
+
+# Get the bib record
     headers = {'Accept': 'application/xml'}
     response = requests.get(f"https://api-na.hosted.exlibrisgroup.com/almaws/v1/bibs/{mmsid}?view=full&expand=None&apikey={api_key}", headers=headers)
     
@@ -31,25 +32,39 @@ def get_and_put(api_key, mmsid):
     for prefix, uri in namespaces.items( ):
         ET.register_namespace(prefix, uri)
 
-    # Make changes here...
+    # Make changes here... return FALSE if no changes are made
     root = make_changes(root, namespaces)
+    if not root:
+        msg = f"\n  No changes needed in bib record {mmsid}.\n"
+        print(msg)
+        bib_log_file.write(msg)
+
+        return
     
     # Convert the ElementTree back to bytes
     xml_bytes = ET.tostring(root)
     
+    # Before putting the XML back, we need to register the default namespace.  This is necessary to ensure that the XML is well-formed and valid
+    # We need to set the default namespace to the one used in the XML string
+    # ET.register_namespace('', 'http://alma.exlibrisgroup.com/dc/01GCL_INST')
+    # ET.register_namespace('grin', 'http://alma.exlibrisgroup.com/dc/01GCL_INST')
+            
     # And put it back
     headers = {'Accept': 'application/xml', 'Content-Type': 'application/xml; charset=utf-8'}
-    response = requests.put(f"https://api-na.hosted.exlibrisgroup.com/almaws/v1/bibs/{mmsid}?validate=false&override_warning=true&override_lock=true&stale_version_check=false&check_match=false&apikey={api_key}", headers=headers, data=xml_bytes)
+    response = requests.put(f"https://api-na.hosted.exlibrisgroup.com/almaws/v1/bibs/{mmsid}?validate=false&override_warning=true&override_lock=true&stale_version_check=false&check_match=false&apikey={api_key}", headers=headers, data=xml_bytes)    
     
     # If the response is NOT successful, print the status code the response text
     if response.status_code != 200:
         print(response.status_code)
         print(response.text)
+        bib_log_file.write(f"\n\nBib record {mmsid} NOT updated. Status code: {response.status_code}\n")
+        bib_log_file.write(f"\n\nResponse text:\n")
+        bib_log_file.write(response.text)
     else:  # If the response is successful, print the status code and a success message
-        print(f"Bib record {mmsid} updated successfully with status code {response.status_code}.")
+        print(f"\n\nBib record {mmsid} updated successfully with status code {response.status_code}.\n")
+        bib_log_file.write(f"\n\nBib record {mmsid} updated successfully with status code {response.status_code}.\n")
         
-    
-
+        
 # Check if the root element is a <bib> element
 #
 # check_for_bib_tag(root)
@@ -88,6 +103,7 @@ def make_changes(root, namespaces):
     
     # Fetch all the dcterms:identifier elements in the xml_string   
     dcterms_identifiers = root.findall('.//dcterms:identifier', namespaces) 
+    
     # Print the dcterms:identifier elements
     for identifier in dcterms_identifiers:
         print(identifier.tag, identifier.text, sep=':', end='\n', flush=False)
@@ -96,20 +112,47 @@ def make_changes(root, namespaces):
 
     # Fetch all the dc:identifier elements in the xml_string
     dc_identifiers = root.findall('.//dc:identifier', namespaces)
+    
     # Print the dc:identifier elements
     for identifier in dc_identifiers:
         print(identifier.tag, identifier.text, sep=':', end='\n', flush=False)
-        
-    # If we have a dcterms:identiier handle, set has_handle to True, save the dcterms:identifier as a new dc:identifier, and we are done!
+    
+    # If any of the dc:identifer elements start with "http://hdl.handle.net/", set has_handle to True and break out of the loop
+    for identifier in dc_identifiers:
+        if identifier.text.startswith("http://hdl.handle.net/"):
+            # If we have a handle, set has_handle to True and return False, no changes needed
+            has_handle = True
+            return False
+
+    # If we have a dc:identiier handle with a dcterms:URI attribute, REMOVE the dcterms:URI attribute, and we are done!
+    for identifier in dcterms_identifiers:
+        if identifier.text.startswith("http://hdl.handle.net/") and identifier.attrib.get('{http://purl.org/dc/terms/}URI'):
+            # If it has a dcterms:URI attribute, remove it      
+            identifier.attrib.pop('{http://purl.org/dc/terms/}URI', None)
+            # Change the dcterms:identifier tag to dc:identifier
+            has_handle = True
+            # Log the change
+            msg = f"\n  Removed dcterms:URI attribute from {identifier.text}"
+            bib_log_file.write(msg)
+            print(msg)
+            
+            # Return the updated root element   
+            return root
+      
+    # If we have a dcterms:identiier handle, set has_handle to True, change the dcterms:identifier tag to dc:identifier, REMOVE the dcterms:URI attribute, and we are done!
     for identifier in dcterms_identifiers:
         if identifier.text.startswith("http://hdl.handle.net/"):
-            # If we have a handle, set has_handle to True, save the dcterms:identifier as a new dc:identifier, and break out of the loop
+            # Remove the dcterms:URI attribute
+            identifier.attrib.pop('{http://purl.org/dc/terms/}URI', None)
+            # Change the dcterms:identifier tag to dc:identifier
+            identifier.tag = 'dc:identifier'
             has_handle = True
-            # Create a new field with the same value as the dcterms:identifier
-            new_field = ET.Element('dc:identifier', namespaces=namespaces)
-            new_field.text = identifier.text
-            # Append the new field to the bib record and return the new root
-            root.append(new_field)
+            # Log the change
+            msg = f"\n  Changed dcterms:identifier to dc:identifier for {identifier.text}"
+            bib_log_file.write(msg)
+            print(msg)
+            
+            # Return the updated root element   
             return root
     
     # If we don't have a handle now, loop on all the dc:identifier fields in the bib record
@@ -128,25 +171,18 @@ def make_changes(root, namespaces):
                 numeric_part = identifier.text.split(':')[1]
                 # Update the field to carry our Handle
                 identifier.text = f"http://hdl.handle.net/11084/{numeric_part}"
-                # # Print the updated field
-                # print(identifier.tag, identifier.text, sep=':', end='\n', flush=False)
-                # Now, put the new field back into the bib record
-                root.append(identifier)  
                 # Set has handle to True to avoid duplicates
                 has_handle = True     
-                
+                return root
+
             # If it starts with "dg_", save the numeric part and discard the rest
             elif identifier.text.startswith("dg_"):
                 # Extract the numeric part of the identifier
                 numeric_part = identifier.text.split('_')[1]
                 # Update the field to carry our Handle
                 identifier.text = f"http://hdl.handle.net/11084/{numeric_part}"
-                # # Print the updated field
-                # print(identifier.tag, identifier.text, sep=':', end='\n', flush=False)
-                # Now, put the new field back into the bib record
-                root.append(identifier)  
-                # Set has handle to True to avoid duplicates
                 has_handle = True
+                return root
                 
     # Pretty print the updated XML string
     # xml_string = ET.tostring(root, encoding='unicode', default_namespace='http://alma.exlibrisgroup.com/dc/01GCL_INST')   
@@ -179,8 +215,10 @@ if __name__ == "__main__":
         mms_ids = []
         with open('mms_ids.csv', 'r') as file:      
             for line in file:
-                # Strip whitespace and newline characters from each line
-                mms_ids.append(line.strip())
+                # If value is numeric, add it to the list
+                if line.strip( ).isdigit( ):
+                    # Append the MMS ID to the list
+                    mms_ids.append(line.strip( ))
                 
         
         # Where the rubber meets the road...
