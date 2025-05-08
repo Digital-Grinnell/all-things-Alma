@@ -35,11 +35,10 @@ def get_and_put(api_key, mmsid):
 
     # Make changes here... return FALSE if no changes are made
     root = make_changes(root, namespaces)
-    if not root:
+    if root is not None:
         msg = f"\n  No changes needed in bib record {mmsid}.\n"
         print(msg)
         bib_log_file.write(msg)
-
         return
     
     # Convert the ElementTree back to bytes
