@@ -71,6 +71,49 @@ The report says that all 11,442 records were skipped because they already have h
 
 I am thrilled with this outcome, but still wondering why this didn't work on the previous attempt?   For future reference I would dearly love to know if the 4-step sequence is correct, or is one of those steps out-of-order?  
 
+# Resolved
+
+I received this follow-up on the morning of May 12, 2025, and it confirms my suspicion that some operations were performed out-of-order.    
+
+```
+A new comment has been added to case  07949018.
+
+Case Title: Alma Chat - handle identifier request
+Last Comment:
+Dear Mark,
+My name is Sabine. I work in the Alma Tier 2 Support Team and took over responsibility for your case.
+I reviewed this case several times with Anchi.
+I read through all the comments and checked the attached PDF file.
+When I looked at the job history for 08/05/2025, I found that 3 jobs have been performed on a set with 11442 records.
+I assume this is the set "All Digital Titles in DCAP01 Format"
+1. job = Job 7336725260004641 = Handle integration
+Submitted at 05/08/2025 14:09:45 CDT
+2. job = 7337053600004641 = Copy dcterm to dcidentifier - All Digital Titles in DCAP01 Format - 05/08/2025 15:50:53 CDT
+Submitted at 05/08/2025 15:50:56 CDT
+3. job = 7337283030004641 = DG Handle Migration - All Digital Titles in DCAP01 Format - 05/08/2025 15:56:22 CDT
+Submitted at 05/08/2025 15:56:26 CDT
+
+The correct order would have been:
+1. Copy dcterm to dcidentifier
+2. DG Handle Migration
+3. Handle integration profile
+
+However, it might explain what you mention in the final 'Update' section in the attached PDF: the handles worked after process ID 7337283030004641, as they had been aldready handled by the integration profile job 7336725260004641
+
+The message '.. already has a handle identifier ...' in the job events for the Handle Migration job can be ignored. It will always display this message for the migration of handles.
+The records need to be checked only if the message says '... does not have a handle identifier'. It this case, the bib record needs to be checked to find out why the handle could not be migrated.
+
+For already existing handles that should be redirected to Primo, it is necessary to
+1. Create a set with these records
+2. Run the Handle Migration job, using the control number sequence with the prefix used in the existing handles. Even if the records already have handles, this job is needed, as it copies the existing handles from the metadata to the handle identifier in the background.
+3. Run the Persistent Handle Identifiers for Digital Resource integration profile on the set, selecting 'Create and Update' as action, and 'Do not add metadata' for the DC METADATA.
+
+If you perform step 3 before step 2, the handles will not resolve correctly.
+However, they will even if you perform step 2 after step 3.
+```
+
+
+
 
 
 
