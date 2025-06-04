@@ -215,7 +215,7 @@ if __name__ == "__main__":
         # Read all the MMS IDs from the file    
         # -----------------------------------------------------------------------
         mms_ids = []
-        with open('mms_ids.csv', 'r') as file:      
+        with open('/Users/mcfatem/GitHub/all-things-Alma/Python-Scripts/mms_ids.csv', 'r') as file:  
             for line in file:
                 # If value is numeric, add it to the list
                 if line.strip( ).isdigit( ):

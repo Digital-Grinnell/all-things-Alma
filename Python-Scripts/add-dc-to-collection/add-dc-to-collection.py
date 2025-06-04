@@ -120,6 +120,14 @@ def make_changes(root, namespaces):
         print(identifier.tag, identifier.text, sep=':', end='\n', flush=False)
         for key, value in identifier.attrib.items( ):
             print(f"  attribute={key}: {value}", end='\n', flush=False)
+            # if value contains 'hdl.handle.net', set has_handle to True
+            if 'hdl.handle.net' in value:
+                has_handle = True
+                print(f"  Found a handle: {value}", end='\n', flush=False)
+    # If we have a handle, we don't need to do anything else
+    if has_handle:
+        print(f"\nWe already have a handle, so no changes are needed.")
+        return False
 
     hyphenated_title = False
 
@@ -131,8 +139,8 @@ def make_changes(root, namespaces):
         # Print the hyphenated title
         print(f"\nThe hyphenated title is: {hyphenated_title}")
 
-    # Assuming we have no dc:identiier field...  Create one to hold the object's HANDLE.
-    if hyphenated_title and not dcterms_identifiers and not dc_identifiers:
+    # Assuming we have no dc:identifier field with a handle...  Create one to hold the object's HANDLE.
+    if hyphenated_title and not has_handle:
         # Create a new dc:identifier element
         new_identifier = ET.Element('dc:identifier', {'xmlns': 'http://purl.org/dc/elements/1.1/'})
         # Set the text of the new identifier to the handle
@@ -144,6 +152,13 @@ def make_changes(root, namespaces):
         msg = f"\n  Created a new dc:identifier element with handle {new_identifier.text}"
         bib_log_file.write(msg)
         print(msg)
+        
+        # Pretty print the updated XML string
+        # xml_string = ET.tostring(root, encoding='unicode', default_namespace='http://alma.exlibrisgroup.com/dc/01GCL_INST')   
+        xml_string = ET.tostring(root, encoding='unicode')   
+        print(f"\nThe updated XML string is:\n")
+        pprint(xml_string, indent=4)
+        
         return root
         
         
@@ -179,7 +194,7 @@ if __name__ == "__main__":
         # Read all the MMS IDs from the file    
         # -----------------------------------------------------------------------
         mms_ids = []
-        with open('mms_ids.csv', 'r') as file:      
+        with open('/Users/mcfatem/GitHub/all-things-Alma/Python-Scripts/mms_ids.csv', 'r') as file:      
             for line in file:
                 # If value is numeric, add it to the list
                 if line.strip( ).isdigit( ):
