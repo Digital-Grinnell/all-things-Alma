@@ -72,6 +72,9 @@ def get_and_put(api_key, mmsid):
 def check_for_bib_tag(root):
     # Check if the root element is a <bib> element
     if root.tag != 'bib':
+        msg = f"\n  The root element is not a <bib> element, it is a {root.tag} element.  Adding a <bib> element to the XML string."
+        print(msg)  
+        bib_log_file.write(msg)
         # If not, create a new <bib> element and append the original root element to it
         new_root = ET.Element('bib')
         new_root.append(root)
