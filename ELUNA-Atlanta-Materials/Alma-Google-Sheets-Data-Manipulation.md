@@ -1,0 +1,1 @@
+Rather than carrying an 8-minute video in our GitHub repo I've placed a copy in Azure Blob storage (cool storage) at https://dgdocumentation.blob.core.windows.net/eluna-atlanta/Alma-Google-Sheets-Data-Manipulation.mov. 
