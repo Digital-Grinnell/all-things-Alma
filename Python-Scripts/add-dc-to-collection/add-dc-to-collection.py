@@ -79,8 +79,10 @@ def check_for_bib_tag(root):
         new_root = ET.Element('bib')
         new_root.append(root)
         return new_root
-    else:
-        # If it is already a <bib> element, return the original root element
+    else:  # If it is already a <bib> element, return the original root element
+        msg = f"\n  The root element is a <bib> element.  No changes needed."
+        print(msg)
+        bib_log_file.write(msg)
         return root
 
   
@@ -95,6 +97,11 @@ def make_changes(root, namespaces):
     
     # Check if the root element is a <bib> element
     root = check_for_bib_tag(root)
+    
+    # Pretty print the updated XML string
+    xml_string = ET.tostring(root, encoding='unicode')   
+    print(f"\nThe unmodified XML string is:\n")
+    pprint(xml_string, indent=4)
 
     # Print some information about the XML string
     print(f"\nThe XML string has been parsed into an ElementTree object.")
