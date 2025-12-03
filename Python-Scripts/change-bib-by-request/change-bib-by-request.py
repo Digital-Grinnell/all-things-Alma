@@ -51,7 +51,7 @@ def get_and_put(api_key, mmsid):
             
     # And put it back
     headers = {'Accept': 'application/xml', 'Content-Type': 'application/xml; charset=utf-8'}
-    response = requests.put(f"https://api-na.hosted.exlibrisgroup.com/almaws/v1/bibs/{mmsid}?validate=false&override_warning=true&override_lock=true&stale_version_check=false&check_match=false&apikey={api_key}", headers=headers, data=xml_bytes)    
+    response = requests.put(f"https://api-na.hosted.exlibrisgroup.com/almaws/v1/bibs/{mmsid}?validate=true&override_warning=true&override_lock=true&stale_version_check=false&check_match=false&apikey={api_key}", headers=headers, data=xml_bytes)    
     
     # If the response is NOT successful, print the status code the response text
     if response.status_code != 200:
