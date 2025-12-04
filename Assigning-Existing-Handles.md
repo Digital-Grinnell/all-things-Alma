@@ -1,6 +1,14 @@
 # Assigning Existing Handles to Alma Records
 
-The workflow suggested by support agent Anchi Hsu is...  
+The workflow suggested by agent Sabine in December 2025...
+
+Workflow for new digital titles without handles:
+1. Create a set with the digital titles that need to receive a handle.
+2. Run the Handle integration profile on this set with the following option:
+DC METADATA Upon Create = Add new Handles to Metadata
+
+
+The earlier workflow suggested by support agent Anchi Hsu is...  
 
 1. Create a title set that already includes a handle identifier. (record 991011592645304641 is the only member of set 7333418150004641)  
 2. Admin > Run a job > search name: Copy dcterm to dcidentifier > wait for it to finish, and go to the next step (ran process ID 7333418330004641)  
