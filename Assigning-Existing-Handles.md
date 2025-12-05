@@ -7,6 +7,29 @@ Workflow for new digital titles without handles:
 2. Run the Handle integration profile on this set with the following option:
 DC METADATA Upon Create = Add new Handles to Metadata
 
+## The Devil Is In the Details... and Alma is Possessed!
+
+Specifically...  
+
+    1) Create a set, that's a no-brainer.  
+    2a) Go to `Configuration`... yes, that's Alma Sense in Spades, you go to `Configuration` to run something.  A no-brainer in a completely different sense.  
+    2b) Then choose `General`.  
+    2c) Then choose `External Systems / Integration Profiles`.  
+    2d) Find the `Persistent Handle Identifiers for Digital Resource` profile and click on the name, not the ...'s.  
+    2e) Choose the `Actions` tab.  
+    2f) Enter the name of the set created in Step 1.  Yes, this is another no-brainer Alma Sense thing... selecting a run-time parameter inside `Configuration`.  Absolutely absurd, but that's Alma.  
+    2g) Make sure `Action` is set to `Create and Update`.    
+    2h) Scroll down to the `DC Metadata` section... yes, scroll DOWN, past everything else.  We will return (scroll back up) in a few minutes.  
+    2i) For `Upon Create` choose `Add new Handles to metadata`.  
+    2j) Be sure to leave the `DC Identifier Prefix Field` empty/blank.  
+    2k) Scroll back up.  DO NOT click `Save`!  
+    2l) Instead, look for the barely visible `Run` button toward the left center of the window.  
+    2m) Click `Run` and hope like hell something good happens.  
+    2n) Click `Save` if you like.  I don't think this is necessary but it's a big RED button, so presumably (Alma Sense) they want you to click it.  
+    3) Test the living shit out of your new Handles.  Hopefully your set (see Step 1) contains 100 or fewer objects because the process goes ape shit crazy if you give it more than that to chew on.  
+
+
+## Earlier Guidance
 
 The earlier workflow suggested by support agent Anchi Hsu is...  
 
