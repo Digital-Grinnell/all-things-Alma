@@ -178,3 +178,6 @@ cython_debug/
 
 # VS Code workspace settings
 *.code-workspace
+
+# Some Mac things
+.DS_Store
