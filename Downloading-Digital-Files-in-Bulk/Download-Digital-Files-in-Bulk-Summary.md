@@ -70,7 +70,7 @@ You retrieve those files from the job’s report in Alma, under Monitor Jobs.[^1
 
 [^1_15]: https://knowledge.exlibrisgroup.com/Alma/Product_Documentation/010Alma_Online_Help_(English)/080Analytics/Alma_Analytics_Subject_Areas/Titles
 
-# Feburary Update
+# February Update
 
 On February 16 I was able to **successfully** run the `Download Digital Titles Inventory` job against 100 of our solitary TIFF bib records.  Since the job finished without error I was then able to download the 100 pieces of digital content!  
 
