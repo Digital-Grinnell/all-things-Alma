@@ -160,7 +160,29 @@ Additional Documentation:
 [Alma Digital storage limits](https://urldefense.proofpoint.com/v2/url?u=https-3A__knowledge.exlibrisgroup.com_Alma_Knowledge-5FArticles_Alma-5FDigital-5Fstorage-5Flimits&d=DwMFAg&c=HUrdOLg_tCr0UMeDjWLBOM9lLDRpsndbROGxEKQRFzk&r=nH2hMpTvSjRhUuvRH71mY5LhDqSZ1TYK6GsIHqRQC1c&m=-JuEOZM0gpMhZXxMr49M_ZXWoieQMYliMJ7dnaICruddgAelUnJ61JLyMI0xGqHg&s=CKtod-00dmoNotkdk564t38i1lxVZV7jJCKdVuHWBRs&e=)  
 [Configuring Digital Storage](https://urldefense.proofpoint.com/v2/url?u=https-3A__knowledge.exlibrisgroup.com_Alma_Product-5FDocumentation_010Alma-5FOnline-5FHelp-5F-28English-29_Digital-5FResource-5FManagement_020Configuring-5FDigital-5FResource-5FManagement_020Configuring-5FDigital-5FStorage&d=DwMFAg&c=HUrdOLg_tCr0UMeDjWLBOM9lLDRpsndbROGxEKQRFzk&r=nH2hMpTvSjRhUuvRH71mY5LhDqSZ1TYK6GsIHqRQC1c&m=-JuEOZM0gpMhZXxMr49M_ZXWoieQMYliMJ7dnaICruddgAelUnJ61JLyMI0xGqHg&s=VEa9pa1OrTc0fAzKAAkFYaJM2LRMcBb6E4_OsdqP7AQ&e=)  
 
+# Perplexity Had This To Say About Storage Keys
 
+That notification is from Alma's Digital Resource Management module — it's referring to the S3-style access key/secret pair Alma issues so external tools can read/write files in your institution's digital storage bucket.
+
+## What's happening
+
+Alma lets each institution generate up to two access key/secret pairs for direct storage access, used by things like the Alma Digital Uploader, AWS CLI, S3 Browser, or MSP360 Explorer. These keys don't expire on a fixed Alma-enforced schedule the way a login password would, but Ex Libris/your institution's security policy flags them for periodic rotation — which is what triggered this notification. [developers.exlibrisgroup](https://developers.exlibrisgroup.com/alma/integrations/digital/almadigital/)
+
+## How to rotate them
+
+1. Go to **Configuration Menu > Resources > General > Digital Storage** in Alma (requires the General System Administrator role) ([Ex Libris Knowledge Center](https://knowledge.exlibrisgroup.com/Alma/Product_Documentation/010Alma_Online_Help_(English)/Digital_Resource_Management/020Configuring_Digital_Resource_Management/020Configuring_Digital_Storage)).
+2. Click **Generate** to create a *new* key/secret pair first, before deleting the old one — since you can have up to two active at once, this avoids downtime.
+3. Copy the new secret immediately and store it securely (in a password manager, not a doc) — Alma shows it only once and cannot redisplay it later. [developers.exlibrisgroup](https://developers.exlibrisgroup.com/alma/integrations/digital/almadigital/)
+4. Update any tools or scripts that use the old key — the Alma Digital Uploader config, AWS CLI credentials, S3 Browser profiles, or any custom scripts you or colleagues wrote against the bucket.
+5. Confirm those tools still connect successfully with the new credentials.
+6. Only then go back to the Digital Storage page, select the checkbox next to the old (expired) key, and click **Delete** — this deactivates and removes it.
+
+## Things worth flagging for your workflow
+
+- The keys are per-institution, not per-user, and are not used internally by Alma processes — only by external tools you've configured, so check with any colleagues who might have their own copies of the credentials before deleting the old key. [developers.exlibrisgroup](https://developers.exlibrisgroup.com/alma/integrations/digital/almadigital/)
+- If you use the Cantaloupe image server or any custom digital-collections scripts (fits your CollectionBuilder/metadata workflow work) that pull from the S3 bucket directly, those will need the new key/secret too — Ex Libris's own docs don't call this out explicitly, so it's easy to miss and cause a quiet outage if skipped.
+
+I don't have direct access to your Alma admin console, so I can't do the rotation myself, but happy to help you draft an update checklist or a script snippet to swap credentials in any tooling you maintain if that'd help.
 
 
 
